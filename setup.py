@@ -20,5 +20,8 @@ setup(
     'console_scripts':[
       'newman = newman.core:main',
     ]
-  }
+  },
+  classifiers=[
+    'Operating System :: POSIX',
+  ]
 )
