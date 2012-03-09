@@ -23,5 +23,6 @@ setup(
   },
   classifiers=[
     'Operating System :: POSIX',
+    'Environment :: Console'
   ]
 )
