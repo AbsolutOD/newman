@@ -1,7 +1,7 @@
 from argument import Argument
 from decorators import task
 
-__version__ = "0.6.7"
+__version__ = "0.6.8"
 
 def get_version():
     """Returns the __version__"""
