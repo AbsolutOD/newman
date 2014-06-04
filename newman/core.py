@@ -13,36 +13,39 @@ import os
 import sys
 import pprint
 
-from argument import Argument
-from decorators import task
-from . import get_version
 
 pp = pprint.PrettyPrinter(indent=4)
 
-VERSION = get_version()
 
 # setting globals
 DEBUG = False
 ROOT_PATH = os.getcwd()
-ABS_TASK_PATH = os.path.join(ROOT_PATH, 'lib', 'tasks')
 TASK_PATH = os.path.join('lib', 'tasks')
+ABS_TASK_PATH = os.path.join(ROOT_PATH, TASK_PATH)
 NEWMAN_FILE = "%s/NewmanFile" % ROOT_PATH
 NEWMAN_CONFIG = "%s/.newmanrc" % ROOT_PATH
 
-excluded_modules = ['__init__.py', '.pyc', '.pyo', '.svn', '.swp']
+EXCLUDED_MODULES = ['__init__.py', '.pyc', '.pyo', '.svn', '.swp']
 
-def load_task_modules(subparser):
-    """Loads task modules from the first detected path from TASK_PATHS"""
-    # first let's import the task group modules
+
+def find_task_modules():
+    """Find the task modules from the file system"""
+
     task_modules = []
     for filename in os.listdir(ABS_TASK_PATH):
-        if any(map(lambda x: x in filename, excluded_modules)):
-            # ignore any files that contain an entry from excluded modules
+        # ignore any files that contain an entry from excluded modules
+        if any(map(lambda x: x in filename, EXCLUDED_MODULES)):
             continue
         (mod_name, ext) = os.path.splitext(filename)
         task_modules.append(mod_name)
         debug("loading task module: {0}".format(mod_name))
-  
+    return task_modules
+
+
+def load_task_modules(subparser):
+    """Loads task modules from the first detected path from TASK_PATHS"""
+    task_modules = find_task_modules()
+    # first let's import the task group modules
     debug("Loading Task Path: {0}".format(TASK_PATH))
     ## change the local tasks module either from a script importing newman 
     # or a dir that you are running newman in.
@@ -50,6 +53,7 @@ def load_task_modules(subparser):
 
     for mod in task_modules:
         __import__('%s.%s' % (mod_prefix, mod))
+    # NOTE: function should end here
 
     # now that they are all in the tasks namespace, let's build our task hash
     tasks = {}
@@ -60,9 +64,9 @@ def load_task_modules(subparser):
         # setup module parser
         mod_parser = subparser.add_parser(mod_name, help=mod.__doc__)
         mod_task_parser = mod_parser.add_subparsers(
-          title='Tasks under %s' % mod_name,
-          help='The following are valid task commands',
-          dest='task'
+            title='Tasks under %s' % mod_name,
+            help='The following are valid task commands',
+            dest='task'
         )
     
         # building a hash of task groups and tasks
@@ -164,6 +168,7 @@ def debug(msg):
         print msg
 
 def config_parser(parser):
+    parser = argparse.ArgumentParser()
     # main parser arguments
     # this feature is down the roadmap
     #parser.add_argument('-t', '--tasks', type=bool, default=True,
@@ -189,19 +194,17 @@ def config_parser(parser):
         tasks = load_task_modules(subparser)
         # TODO: I think want to load the tasks first before configuring argparse
         #add_modules_arguments(tasks)
+    return parser
 
 def run(script_path, task_path, version=None):
     global TASK_PATH
     global ROOT_PATH
     global ABS_TASK_PATH
-    global VERSION
 
     # setting paths
     TASK_PATH = task_path
     ROOT_PATH = script_path
     ABS_TASK_PATH = os.path.join(ROOT_PATH, TASK_PATH)
-    if version:
-        VERSION = version
 
     main()
 
@@ -216,8 +219,6 @@ def main():
     if os.path.isfile(NEWMAN_CONFIG):
         read_config()
     
-    parser = argparse.ArgumentParser()
-    config_parser(parser)
+    parser = config_parser()
     args = parser.parse_args()
-    
     args.func(args)
