@@ -13,6 +13,7 @@ import os
 import sys
 import pprint
 
+from . import get_version
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -167,7 +168,7 @@ def debug(msg):
     if DEBUG:
         print msg
 
-def config_parser(parser):
+def config_parser():
     parser = argparse.ArgumentParser()
     # main parser arguments
     # this feature is down the roadmap
@@ -176,7 +177,7 @@ def config_parser(parser):
     # add our top-level arguments to the main parser
     parser.add_argument('-v', '--version',
                         action='version', help='show version and exit',
-                        version='%%(prog)s %s' % VERSION)
+                        version='%%(prog)s %s' % get_version())
     # TODO: setup debugging
     #parser.add_argument('-d', '--debug', action='store_true', help='Print debug')
     
