@@ -43,7 +43,7 @@ def find_task_modules():
     return task_modules
 
 
-def load_task_modules(subparser):
+def import_task_modules():
     """Loads task modules from the first detected path from TASK_PATHS"""
     task_modules = find_task_modules()
     # first let's import the task group modules
@@ -55,11 +55,13 @@ def load_task_modules(subparser):
     for mod in task_modules:
         __import__('%s.%s' % (mod_prefix, mod))
     # NOTE: function should end here
+    return task_modules
 
+
+def build_mod_parsers(subparser, task_modules):
     # now that they are all in the tasks namespace, let's build our task hash
-    tasks = {}
+    parsers = {}
     for mod_name in task_modules:
-        mod_parser = None
         mod = sys.modules['%s.%s' % (mod_prefix, mod_name)]
 
         # setup module parser
@@ -69,33 +71,41 @@ def load_task_modules(subparser):
             help='The following are valid task commands',
             dest='task'
         )
-    
+
         # building a hash of task groups and tasks
-        #tasks[mod_name] = {}
-        tasks = {}
-        for task_name, task_obj in inspect.getmembers(mod, inspect.isfunction):
-            debug("TASK Name: %s" % task_name)
-            if task_obj.func_dict.get('task'):
-                # create a task
-                task_parser = mod_task_parser.add_parser(
-                  task_name,
-                  help=task_obj.__doc__
-                )
-    
-                # add task arguments
-                add_task_arguments(task_parser, task_obj)
-                task_parser.set_defaults(func=task_obj)
+        parsers[mod_name] = {
+            'mod_obj': mod,
+            'mod_parser': mod_parser,
+            'task_parser': mod_task_parser
+        }
+        return(parsers)
+
+
+def build_task_parser(mod_parser):
+    """doc string for task parser"""
+    for task_name, task_obj in inspect.getmembers(mod, inspect.isfunction):
+        debug("TASK Name: %s" % task_name)
+        task_parser = build_task_parser(mod_parser['task_parser'], task_name, task_obj)
+
+        # add task arguments
+        add_task_arguments(task_parser, task_obj)
+        task_parser.set_defaults(func=task_obj)
+
 
 ## NOTE: This is the start to refactor some of the above
-#def add_tasks(mod_task_parser, task_name, task_obj):
-#    """docstring for add_tasks"""
-#    if task_obj.func_dict.get('task'):
-#        # create a task
-#        task_parser = mod_task_parser.add_parser(task_name, help=task_obj.__doc__)
-#
-#        # add task arguments
-#        add_task_arguments(task_parser, task_obj)
-#        task_parser.set_defaults(func=task_obj)
+def build_task_parser(mod_task_parser, task_name, task_obj):
+    """docstring for add_tasks"""
+    if task_obj.func_dict.get('task'):
+        # create a task
+        task_parser = mod_task_parser.add_parser(task_name, help=task_obj.__doc__)
+
+        # add task arguments
+        add_task_arguments(task_parser, task_obj)
+        task_parser.set_defaults(func=task_obj)
+        return task_parser
+    else:
+        return False
+
 
 def add_task_arguments(task_parser, task_obj):
     for arg in task_obj.options:
@@ -113,21 +123,6 @@ def add_task_arguments(task_parser, task_obj):
             kwargs["action"] = 'store'
         task_parser.add_argument("--%s" % arg.name, **kwargs)
 
-## TODO: still need to add the newmanfile feature
-def load_task(parser):
-    for task_name, task_obj in inspect.getmembers(tm, inspect.isfunction):
-        debug("Loading Task Name: %s" % task_name)
-        #pp.pprint(dir(task_obj))
-        if task_obj.func_dict.get('task'):
-            # create a task
-            task_parser = mod_task_parser.add_parser(
-                task_name,
-                help=task_obj.__doc__
-            )
-
-            # add task arguments
-            add_task_arguments(task_parser, task_obj)
-            task_parser.set_defaults(func=task_obj)
 
 def load_newman_file():
     tm = imp.new_module('tasks')
@@ -141,6 +136,7 @@ def load_newman_file():
         e.strerror = 'Unable to load configuration file (%s)' % e.strerror
         raise
     return True
+
 
 def read_config():
     global ABS_TASK_PATH
@@ -162,6 +158,7 @@ def read_config():
         e.strerror = 'Unable to load configuration file (%s)' % e.strerror
         raise
     return True
+
 
 def debug(msg):
     """docstring for debug"""
@@ -192,10 +189,11 @@ def config_parser():
         subparser = parser.add_subparsers(title='Task Modules',
                                           description='Namespaces for the different sub tasks.',
                                           dest='task_module')
-        tasks = load_task_modules(subparser)
+        tasks = import_task_modules(subparser)
         # TODO: I think want to load the tasks first before configuring argparse
         #add_modules_arguments(tasks)
     return parser
+
 
 def run(script_path, task_path, version=None):
     global TASK_PATH
@@ -208,6 +206,7 @@ def run(script_path, task_path, version=None):
     ABS_TASK_PATH = os.path.join(ROOT_PATH, TASK_PATH)
 
     main()
+
 
 def main():
     global DEBUG
