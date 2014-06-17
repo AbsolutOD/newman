@@ -61,6 +61,7 @@ def import_task_modules():
 def build_mod_parsers(subparser, task_modules):
     # now that they are all in the tasks namespace, let's build our task hash
     parsers = {}
+    mod_prefix = TASK_PATH.replace('/', '.')
     for mod_name in task_modules:
         mod = sys.modules['%s.%s' % (mod_prefix, mod_name)]
 
@@ -78,12 +79,13 @@ def build_mod_parsers(subparser, task_modules):
             'mod_parser': mod_parser,
             'task_parser': mod_task_parser
         }
-        return(parsers)
+        load_tasks(parsers[mod_name])
+    return parsers
 
 
-def build_task_parser(mod_parser):
+def load_tasks(mod_parser):
     """doc string for task parser"""
-    for task_name, task_obj in inspect.getmembers(mod, inspect.isfunction):
+    for task_name, task_obj in inspect.getmembers(mod_parser['mod_obj'], inspect.isfunction):
         debug("TASK Name: %s" % task_name)
         task_parser = build_task_parser(mod_parser['task_parser'], task_name, task_obj)
 
@@ -110,6 +112,7 @@ def build_task_parser(mod_task_parser, task_name, task_obj):
 def add_task_arguments(task_parser, task_obj):
     for arg in task_obj.options:
         kwargs = arg.parser_args()
+        print kwargs
         if arg.datatype == bool:
             kwargs["action"] = 'store_true'
             del kwargs['required']
@@ -189,9 +192,8 @@ def config_parser():
         subparser = parser.add_subparsers(title='Task Modules',
                                           description='Namespaces for the different sub tasks.',
                                           dest='task_module')
-        tasks = import_task_modules(subparser)
-        # TODO: I think want to load the tasks first before configuring argparse
-        #add_modules_arguments(tasks)
+        task_modules = import_task_modules()
+        build_mod_parsers(subparser, task_modules)
     return parser
 
 
