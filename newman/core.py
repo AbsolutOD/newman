@@ -54,7 +54,7 @@ def import_task_modules():
 
     for mod in task_modules:
         __import__('%s.%s' % (mod_prefix, mod))
-    # NOTE: function should end here
+
     return task_modules
 
 
@@ -79,19 +79,16 @@ def build_mod_parsers(subparser, task_modules):
             'mod_parser': mod_parser,
             'task_parser': mod_task_parser
         }
-        load_tasks(parsers[mod_name])
+        load_tasks(mod, mod_task_parser)
     return parsers
 
 
-def load_tasks(mod_parser):
+def load_tasks(mod_obj, mod_task_parser):
     """doc string for task parser"""
-    for task_name, task_obj in inspect.getmembers(mod_parser['mod_obj'], inspect.isfunction):
+    for task_name, task_obj in inspect.getmembers(mod_obj, inspect.isfunction):
         debug("TASK Name: %s" % task_name)
-        task_parser = build_task_parser(mod_parser['task_parser'], task_name, task_obj)
-
-        # add task arguments
-        add_task_arguments(task_parser, task_obj)
-        task_parser.set_defaults(func=task_obj)
+        task_parser = build_task_parser(mod_task_parser, task_name, task_obj)
+        return task_parser
 
 
 ## NOTE: This is the start to refactor some of the above
@@ -112,7 +109,6 @@ def build_task_parser(mod_task_parser, task_name, task_obj):
 def add_task_arguments(task_parser, task_obj):
     for arg in task_obj.options:
         kwargs = arg.parser_args()
-        print kwargs
         if arg.datatype == bool:
             kwargs["action"] = 'store_true'
             del kwargs['required']
