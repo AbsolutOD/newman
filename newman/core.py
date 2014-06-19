@@ -73,12 +73,6 @@ def build_mod_parsers(subparser, task_modules):
             dest='task'
         )
 
-        # building a hash of task groups and tasks
-        parsers[mod_name] = {
-            'mod_obj': mod,
-            'mod_parser': mod_parser,
-            'task_parser': mod_task_parser
-        }
         load_tasks(mod, mod_task_parser)
     return parsers
 
