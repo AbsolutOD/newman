@@ -13,7 +13,7 @@ setup(
   version=newman.get_version(),
   description='Simple utility for making command tools.  Inspired by rake.',
   author="Matt O'Donnell",
-  author_email='matt.odonnell@adkeeper.com',
+  author_email='matt@absolutod.com',
   packages=['newman'],
   install_requires=deps,
   entry_points={
