@@ -1,7 +1,3 @@
-Newman
-
-This is the first post I have written of this kind.  I am introducing a tool I have written at Adkeeper.com to help manage python code.
-
 History
 
 Before I joined Adkeeper.com, I was mainly a ruby developer writing a lot of rails and sinatra apps.  There is an awesome tool written in ruby called Rake.  You can't work with ruby and not use rake.  Rake is a great tool that let's you write ruby code to help manage your project.
