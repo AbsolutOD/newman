@@ -1,3 +1,5 @@
 *.pyc
 dist/
 newman.egg-info/
+.idea
+
