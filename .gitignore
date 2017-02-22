@@ -1,4 +1,5 @@
 *.pyc
+bin/
 dist/
 newman.egg-info/
 .idea
