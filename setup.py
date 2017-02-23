@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-deps = ['setuptools']
+deps = ['setuptools', 'colored']
 try:
     import argparse
 except ImportError:

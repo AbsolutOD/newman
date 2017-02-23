@@ -13,6 +13,8 @@ import os
 import sys
 import pprint
 
+from colored import fg, bg, attr
+
 from argument import Argument
 from decorators import task
 from . import get_version
@@ -22,7 +24,7 @@ pp = pprint.PrettyPrinter(indent=4)
 VERSION = get_version()
 
 # setting globals
-DEBUG = False
+DEBUG = True
 ROOT_PATH = os.getcwd()
 ABS_TASK_PATH = os.path.join(ROOT_PATH, 'lib', 'tasks')
 TASK_PATH = os.path.join('lib', 'tasks')
@@ -41,9 +43,9 @@ def load_task_modules(subparser):
             continue
         (mod_name, ext) = os.path.splitext(filename)
         task_modules.append(mod_name)
-        debug("loading task module: {0}".format(mod_name))
+        debug("{0}loading task module:{1} {2}".format(fg('green'), attr('reset'), mod_name))
   
-    debug("Loading Task Path: {0}".format(TASK_PATH))
+    debug("{0}Loading Task Path:{1} {2}".format(fg('green'), attr('reset'), TASK_PATH))
     ## change the local tasks module either from a script importing newman 
     # or a dir that you are running newman in.
     mod_prefix = TASK_PATH.replace('/', '.')
@@ -69,7 +71,7 @@ def load_task_modules(subparser):
         #tasks[mod_name] = {}
         tasks = {}
         for task_name, task_obj in inspect.getmembers(mod, inspect.isfunction):
-            debug("TASK Name: %s" % task_name)
+            debug("{0}TASK Name:{1} {2}".format(fg('green'), attr('reset'), task_name))
             if task_obj.func_dict.get('task'):
                 # create a task
                 task_parser = mod_task_parser.add_parser(
@@ -111,7 +113,7 @@ def add_task_arguments(task_parser, task_obj):
 ## TODO: still need to add the newmanfile feature
 def load_task(parser):
     for task_name, task_obj in inspect.getmembers(tm, inspect.isfunction):
-        debug("Loading Task Name: %s" % task_name)
+        debug("{0}Loading Task Name:{1} {2}".format(fg('green'), attr('reset'), task_name))
         #pp.pprint(dir(task_obj))
         if task_obj.func_dict.get('task'):
             # create a task
@@ -177,11 +179,12 @@ def config_parser(parser):
     
   
     if os.path.isfile(NEWMAN_FILE):
+        debug("{0}found newman config:{1} {2}".format(fg('green'), attr('reset'), NEWMAN_FILE))
         task_mod = load_newman_file()
         # TODO: configure argparse after tasks have been loaded
         load_task(task_mod)
     elif os.path.isdir(ABS_TASK_PATH):
-        debug("Loading TASKS from: {0}".format(ABS_TASK_PATH))
+        debug("{0}Loading TASKS from:{1} {2}".format(fg('green'), attr('reset'), ABS_TASK_PATH))
         # we are going to create a subparser for each task module
         subparser = parser.add_subparsers(title='Task Modules',
                                           description='Namespaces for the different sub tasks.',
@@ -189,6 +192,8 @@ def config_parser(parser):
         tasks = load_task_modules(subparser)
         # TODO: I think want to load the tasks first before configuring argparse
         #add_modules_arguments(tasks)
+    else:
+        debug("Didn't find tasks at: {}".format(ABS_TASK_PATH))
 
 def run(script_path, task_path, version=None):
     global TASK_PATH
@@ -196,10 +201,13 @@ def run(script_path, task_path, version=None):
     global ABS_TASK_PATH
     global VERSION
 
+    debug("{0}Inital ROOT_PATH:{1} {2}".format(fg('green'), attr('reset'), ROOT_PATH))
+
     # setting paths
     TASK_PATH = task_path
     ROOT_PATH = script_path
     ABS_TASK_PATH = os.path.join(ROOT_PATH, TASK_PATH)
+    debug("{0}Set ABS_TASK_PATH to:{1} {2}".format(fg('green'), attr('reset'), ABS_TASK_PATH))
     if version:
         VERSION = version
 
@@ -207,10 +215,11 @@ def run(script_path, task_path, version=None):
 
 def main():
     global DEBUG
-    debug("Running newman in: {0}".format(ROOT_PATH))
+    debug("{0}Running newman in:{1} {2}".format(fg('green'), attr('reset'), ROOT_PATH))
     
     # add the root path to the sys path
     if ROOT_PATH not in sys.path:
+        debug("{0}adding to pythonpath:{1} {2}".format(fg('green'), attr('reset'), ROOT_PATH))
         sys.path.insert(0, ROOT_PATH)
     
     if os.path.isfile(NEWMAN_CONFIG):
